@@ -1,0 +1,73 @@
+#include <stdio.h>
+#include <DigitShield.h>
+#include <DHT.h>
+
+#define AnalogPort A0
+#define DHTPIN 10 // DHT11 센서의 데이터 핀을 10번 핀에 연결합니다.
+#define DHTTYPE DHT11 // DHT 센서 유형을 DHT11로 설정합니다.
+
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup()
+{
+  Serial.begin(9600);
+  DigitShield.begin();
+  dht.begin();
+}
+
+int fnd_count = 1, count = 0;
+
+void loop()
+{
+  int analog_port = analogRead(A0);
+  double ground_humi = 100 - (analog_port / 1023.0 * 100.0);
+  float humidity = dht.readHumidity(); // 습도 값을 읽어옵니다.
+  float temperature = dht.readTemperature(); // 온도 값을 읽어옵니다.
+
+  Serial.print("{\"ground_humi\":");
+  Serial.print(ground_humi);
+  Serial.print(",\"humi\":");
+  Serial.print(humidity);
+  Serial.print(",\"temp\":");
+  Serial.print(temperature);
+  Serial.println("}");
+
+  if (count == 3)
+  {
+    if (fnd_count < 3)
+      fnd_count++;
+    else
+      fnd_count = 1;
+    
+    count = 0;
+  }
+        
+  DigitShield.setDecimalPoint(1, true);
+  DigitShield.setDigit(1, fnd_count);
+
+  switch(fnd_count)
+  {
+    case 1:
+      DigitShield.setDigit(2, (int)ground_humi / 100);
+      DigitShield.setDigit(3, ((int)ground_humi % 100 - (int)ground_humi % 10) / 10);
+      DigitShield.setDigit(4, (int)ground_humi % 10);
+      count++;
+      break;
+    case 2:
+      DigitShield.setDigit(2, 0);
+      DigitShield.setDigit(3, (int)humidity / 10);
+      DigitShield.setDigit(4, (int)humidity % 10);
+      count++;
+      break;
+    case 3:
+      DigitShield.setDigit(2, 0);
+      DigitShield.setDigit(3, (int)temperature / 10);
+      DigitShield.setDigit(4, (int)temperature % 10);
+      count++;
+      break;
+    default:
+      break;
+  }
+
+  delay(1000);
+}```
